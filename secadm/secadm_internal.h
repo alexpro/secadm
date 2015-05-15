@@ -43,6 +43,5 @@ int add_feature(secadm_rule_t *, const ucl_object_t *,
     secadm_feature_type_t);
 secadm_rule_t *parse_applications_object(secadm_rule_t *,
     const ucl_object_t *);
-secadm_rule_t *parse_integriforce(const ucl_object_t *);
 
 #endif
