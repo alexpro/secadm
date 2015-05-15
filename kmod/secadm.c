@@ -268,7 +268,6 @@ read_rule_from_userland(struct thread *td, secadm_rule_t *rule)
 	size_t i;
 	int err = 0;
 	char *path;
-	unsigned char *hash;
 
 	rule->sr_mount[MNAMELEN-1] = '\0';
 
