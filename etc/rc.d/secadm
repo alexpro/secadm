@@ -41,7 +41,7 @@ load_rc_config $name
 : ${secadm_enable:="NO"}
 : ${secadm_rules:="/usr/local/etc/secadm.rules"}
 
-command="/usr/sbin/secadm"
+command="/usr/local/sbin/secadm"
 command_args="-c ${secadm_rules} set"
 
 secadm_prestart()
@@ -57,10 +57,5 @@ secadm_stop()
 {
 	${command} flush
 }
-
-if [ ! -x ${command} ]
-then
-    command="/usr/local/sbin/secadm"
-fi
 
 run_rc_command "$1"
