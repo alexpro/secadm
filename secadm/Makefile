@@ -5,7 +5,7 @@ SRCS=	config.c \
 .if defined(PREFIX)
 BINDIR?=	${PREFIX}/sbin
 .else
-BINDIR?=	/usr/sbin
+BINDIR?=	/usr/local/sbin
 .endif
 
 LDADD=	-lucl -lm -lsecadm
