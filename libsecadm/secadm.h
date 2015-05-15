@@ -62,7 +62,6 @@ typedef enum secadm_feature_type {
 	segvguard_enabled,
 	aslr_disabled,
 	aslr_enabled,
-	integriforce
 } secadm_feature_type_t;
 
 typedef enum secadm_hash_type {
@@ -70,17 +69,6 @@ typedef enum secadm_hash_type {
 	si_hash_sha1,
 	si_hash_sha256
 } secadm_hash_type_t;
-
-typedef enum secadm_integriforce_mode {
-	si_mode_soft=0,
-	si_mode_hard
-} secadm_integriforce_mode_t;
-
-typedef enum secadm_integriforce_cache {
-	si_unchecked=0,
-	si_success,
-	si_fail
-} secadm_integriforce_check_t;
 
 #define DEFAULT_MODE	si_mode_hard
 
@@ -103,13 +91,6 @@ typedef struct secadm_feature {
 	size_t			 sf_metadatasz;
 	void			*sf_metadata;
 } secadm_feature_t;
-
-typedef struct secadm_integriforce {
-	secadm_integriforce_mode_t	 si_mode;
-	secadm_integriforce_check_t	 si_cache;
-	secadm_hash_type_t		 si_hashtype;
-	unsigned char			*si_hash;
-} secadm_integriforce_t;
 
 typedef struct secadm_rule {
 	size_t			 sr_id;
@@ -156,11 +137,6 @@ typedef struct secadm_reply {
 	void			*sr_metadata;
 	size_t			 sr_size;
 } secadm_reply_t;
-
-typedef struct integriforce_so_check {
-	char	 isc_path[MAXPATHLEN];
-	int	 isc_result;
-} integriforce_so_check_t;
 
 #ifdef _KERNEL
 
@@ -255,10 +231,6 @@ int get_num_rules(struct thread *, secadm_command_t *, secadm_reply_t *);
 int handle_get_rule(struct thread *, secadm_command_t *, secadm_reply_t *);
 void cleanup_jail_rules(struct secadm_prison_entry *);
 void log_location(const char *, int);
-
-int do_integriforce_check(secadm_rule_t *, struct vattr *,
-    struct vnode *, struct ucred *);
-secadm_feature_t *lookup_integriforce_feature(secadm_rule_t *);
 
 #endif /* _KERNEL */
 

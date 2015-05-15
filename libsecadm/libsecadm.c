@@ -157,8 +157,7 @@ void
 secadm_debug_print_rule(secadm_rule_t *rule)
 {
 	secadm_feature_t *feature;
-	secadm_integriforce_t *metadata;
-	size_t hashsz, i, j;
+	size_t i, j;
 
 	printf("[*] Rule %zu\n", rule->sr_id);
 	printf("    - Path: %s\n", rule->sr_path);
@@ -187,33 +186,6 @@ secadm_debug_print_rule(secadm_rule_t *rule)
 			break;
 		case aslr_enabled:
 			printf("    - Feature[ASLR]: Enabled\n");
-			break;
-		case integriforce:
-			if (rule->sr_features[i].sf_metadata == NULL) {
-				printf("    - Integriforce enabled, but NULL\n");
-				break;
-			}
-
-			metadata = (secadm_integriforce_t *)(rule->sr_features[i].sf_metadata);
-			printf("     - Integriforce:\n");
-			printf("       + Enforcing mode: %s\n",
-			    convert_from_integriforce_mode(metadata->si_mode));
-			printf("       + Hash: ");
-			switch (metadata->si_hashtype) {
-			case si_hash_sha1:
-				hashsz=SHA1_DIGESTLEN;
-				break;
-			case si_hash_sha256:
-				hashsz=SHA256_DIGESTLEN;
-				break;
-			default:
-				hashsz=0;
-				break;
-			}
-
-			for (j=0; j<hashsz; j++)
-				printf("%02x", metadata->si_hash[j]);
-			printf("\n");
 			break;
 		default:
 			printf("    - Feature %d unknown\n",
