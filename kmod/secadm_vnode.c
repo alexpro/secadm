@@ -108,11 +108,6 @@ secadm_vnode_check_exec(struct ucred *ucred, struct vnode *vp,
 			case aslr_disabled:
 				flags |= PAX_NOTE_NOASLR;
 				break;
-#if __FreeBSD_version > 1100000
-			case integriforce:
-				err = do_integriforce_check(rule, &vap, imgp->vp, ucred);
-				break;
-#endif
 			default:
 				break;
 			}
@@ -198,15 +193,6 @@ secadm_vnode_check_open(struct ucred *ucred, struct vnode *vp,
 		if (strcmp(vp->v_mount->mnt_stat.f_mntonname,
 		    rule->sr_mount))
 			continue;
-
-#if __FreeBSD_version > 1100000
-		if (lookup_integriforce_feature(rule) != NULL) {
-			printf("Info: A process tried to modify a "
-			    "file protected by a secadm rule. "
-			    "Returning EPERM.\n");
-			res=EPERM;
-		}
-#endif
 		break;
 	}
 	SPL_RUNLOCK(entry, tracker);

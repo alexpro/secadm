@@ -114,7 +114,6 @@ int
 validate_ruleset(struct thread *td, secadm_rule_t *head)
 {
 	secadm_rule_t *rule;
-	secadm_integriforce_t *integriforce_p;
 	size_t nrules, maxid, i;
 
 	nrules = maxid = 0;
@@ -128,30 +127,6 @@ validate_ruleset(struct thread *td, secadm_rule_t *head)
 		 */
 		for (i=0; i < rule->sr_nfeatures; i++) {
 			switch (rule->sr_features[i].sf_type) {
-			case integriforce:
-				if (rule->sr_features[i].sf_metadatasz
-				    != sizeof(secadm_integriforce_t))
-					return (1);
-				integriforce_p =
-				    rule->sr_features[i].sf_metadata;
-
-				switch (integriforce_p->si_mode) {
-				case si_mode_soft:
-				case si_mode_hard:
-					break;
-				default:
-					return (1);
-				}
-
-				switch (integriforce_p->si_hashtype) {
-				case si_hash_sha256:
-				case si_hash_sha1:
-					break;
-				default:
-					return (1);
-				}
-
-				break;
 			default:
 				break;
 			}
@@ -172,7 +147,6 @@ validate_ruleset(struct thread *td, secadm_rule_t *head)
 void
 free_rule(secadm_rule_t *rule, int freerule)
 {
-	secadm_integriforce_t *integriforce_p;
 	size_t i;
 	
 	if (rule->sr_path)
@@ -181,12 +155,6 @@ free_rule(secadm_rule_t *rule, int freerule)
 	for (i=0; i < rule->sr_nfeatures; i++) {
 		if (rule->sr_features[i].sf_metadata) {
 			switch (rule->sr_features[i].sf_type) {
-			case integriforce:
-				integriforce_p =
-				    rule->sr_features[i].sf_metadata;
-				free(integriforce_p->si_hash,
-				    M_SECADM);
-				break;
 			default:
 				break;
 			}
@@ -297,7 +265,6 @@ read_rule_from_userland(struct thread *td, secadm_rule_t *rule)
 {
 	secadm_feature_t *features;
 	secadm_kernel_metadata_t *kernel_metadata;
-	secadm_integriforce_t *integriforce_p;
 	size_t i;
 	int err = 0;
 	char *path;
@@ -319,64 +286,8 @@ read_rule_from_userland(struct thread *td, secadm_rule_t *rule)
 	}
 
 	for (i=0; i<rule->sr_nfeatures; i++) {
-		if (features[i].sf_type == integriforce) {
-			if (features[i].sf_metadatasz !=
-			    sizeof(secadm_integriforce_t)) {
-				free(features, M_SECADM);
-				goto error;
-			}
-
-			integriforce_p = malloc(
-			    sizeof(secadm_integriforce_t), M_SECADM,
-			    M_WAITOK);
-
-			err = copyin(features[i].sf_metadata,
-			    integriforce_p,
-			    sizeof(secadm_integriforce_t));
-			if (err) {
-				free(features, M_SECADM);
-				free(integriforce_p, M_SECADM);
-				goto error;
-			}
-
-			integriforce_p->si_cache = si_unchecked;
-
-			switch (integriforce_p->si_hashtype) {
-			case si_hash_sha256:
-				hash = malloc(SHA256_DIGEST_LENGTH, M_SECADM, M_WAITOK);
-				err = copyin(integriforce_p->si_hash,
-				    hash, SHA256_DIGEST_LENGTH);
-				if (err) {
-					free(hash, M_SECADM);
-					free(features, M_SECADM);
-					free(integriforce_p, M_SECADM);
-					goto error;
-				}
-				integriforce_p->si_hash = hash;
-				break;
-			case si_hash_sha1:
-				hash = malloc(SHA1_RESULTLEN, M_SECADM, M_WAITOK);
-				err = copyin(integriforce_p->si_hash,
-				    hash, SHA1_RESULTLEN);
-				if (err) {
-					free(hash, M_SECADM);
-					free(features, M_SECADM);
-					free(integriforce_p, M_SECADM);
-					goto error;
-				}
-				integriforce_p->si_hash = hash;
-				break;
-			default:
-				free(features, M_SECADM);
-				free(integriforce_p, M_SECADM);
-				goto error;
-			}
-
-			features[i].sf_metadata = integriforce_p;
-		} else {
-			features[i].sf_metadata = NULL;
-			features[i].sf_metadatasz = 0;
-		}
+		features[i].sf_metadata = NULL;
+		features[i].sf_metadatasz = 0;
 	}
 
 	rule->sr_features = features;
@@ -396,7 +307,7 @@ read_rule_from_userland(struct thread *td, secadm_rule_t *rule)
 		rule->sr_pathlen = 0;
 	}
 
-	kernel_metadata = malloc(sizeof(secadm_kernel_metadata_t), M_SECADM, M_WAITOK);
+	kernel_metadata = malloc(sizeof(secadm_kernel_metadata_t), M_SECADM, M_WAITOK | M_ZERO);
 	kernel_metadata->skm_owner = td->td_ucred->cr_prison;
 	rule->sr_kernel = kernel_metadata;
 	rule->sr_prison = malloc(strlen(kernel_metadata->skm_owner->pr_name)+1,
@@ -446,7 +357,6 @@ size_t
 get_rule_size(struct thread *td, size_t id)
 {
 	secadm_rule_t *rule;
-	secadm_integriforce_t *integriforce_p;
 	size_t size, i;
 
 	size = 0;
@@ -463,19 +373,6 @@ get_rule_size(struct thread *td, size_t id)
 		if (rule->sr_features[i].sf_metadata) {
 			size += rule->sr_features[i].sf_metadatasz;
 			switch (rule->sr_features[i].sf_type) {
-			case integriforce:
-				integriforce_p = rule->sr_features[i].sf_metadata;
-				switch (integriforce_p->si_hashtype) {
-				case si_hash_sha1:
-					size += SHA1_RESULTLEN;
-					break;
-				case si_hash_sha256:
-					size += SHA256_DIGEST_LENGTH;
-					break;
-				default:
-					break;
-				}
-				break;
 			default:
 				break;
 			}
@@ -542,7 +439,6 @@ handle_get_rule(struct thread *td, secadm_command_t *cmd, secadm_reply_t *reply)
 {
 	secadm_rule_t *rule, *newrule;
 	secadm_feature_t *newrule_features;
-	secadm_integriforce_t *integriforce_p;
 	size_t id, size, written, i;
 	char *buf, *path;
 	int err;
@@ -599,34 +495,6 @@ handle_get_rule(struct thread *td, secadm_command_t *cmd, secadm_reply_t *reply)
 		memcpy(&(newrule->sr_features[i]), &rule->sr_features[i], sizeof(secadm_feature_t));
 		if (rule->sr_features[i].sf_metadata) {
 			switch (rule->sr_features[i].sf_type) {
-			case integriforce:
-				integriforce_p = (secadm_integriforce_t *)(buf + written);
-				memcpy(integriforce_p, rule->sr_features[i].sf_metadata,
-					sizeof(secadm_integriforce_t));
-				newrule->sr_features[i].sf_metadata =
-				    (char *)(reply->sr_metadata) + written;
-				written += sizeof(secadm_integriforce_t);
-
-				switch (integriforce_p->si_hashtype) {
-				case si_hash_sha1:
-					memcpy(buf + written, integriforce_p->si_hash, SHA1_RESULTLEN);
-					integriforce_p->si_hash = (unsigned char *)
-					    ((char *)(reply->sr_metadata) + written);
-					written += SHA1_RESULTLEN;
-					break;
-				case si_hash_sha256:
-					memcpy(buf + written,
-					    integriforce_p->si_hash,
-					    SHA256_DIGEST_LENGTH);
-					integriforce_p->si_hash = (unsigned char *)
-					    ((char *)(reply->sr_metadata) + written);
-					written += SHA256_DIGEST_LENGTH;
-					break;
-				default:
-					break;
-				}
-
-				break;
 			default:
 				newrule->sr_features[i].sf_metadata = NULL;
 				newrule->sr_features[i].sf_metadatasz = 0;

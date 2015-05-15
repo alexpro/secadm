@@ -1,6 +1,5 @@
 KMOD=	secadm
 SRCS=	\
-	integriforce.c \
 	secadm.c \
 	secadm_mac.c \
 	secadm_sysctl.c \
