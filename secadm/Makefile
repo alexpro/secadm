@@ -16,3 +16,6 @@ LDFLAGS+=	-pie -L${.CURDIR}/../libsecadm/obj -L/usr/local/lib
 NO_MAN=	"yes"
 
 .include <bsd.prog.mk>
+
+deinstall:
+	rm -f /usr/local/sbin/secadm

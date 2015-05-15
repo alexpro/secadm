@@ -9,3 +9,6 @@ SRCS=	\
 CFLAGS+=	-g -O0 -I${.CURDIR}/../libsecadm
 
 .include <bsd.kmod.mk>
+
+deinstall:
+	@echo "no deinstall target in kmod"

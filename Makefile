@@ -3,4 +3,5 @@ SUBDIR+=	etc \
 		libsecadm \
 		secadm
 
+SUBDIR_TARGETS+= deinstall
 .include <bsd.subdir.mk>
