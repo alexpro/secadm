@@ -82,14 +82,12 @@ secadm_vnode_check_exec(struct ucred *ucred, struct vnode *vp,
 
 		for (i=0; i < rule->sr_nfeatures; i++) {
 			switch(rule->sr_features[i].sf_type) {
-#ifdef PAX_NOTE_PAGEEXEC
 			case pageexec_enabled:
 				flags |= PAX_NOTE_PAGEEXEC;
 				break;
 			case pageexec_disabled:
 				flags |= PAX_NOTE_NOPAGEEXEC;
 				break;
-#endif
 			case mprotect_enabled:
 				flags |= PAX_NOTE_MPROTECT;
 				break;
@@ -108,6 +106,14 @@ secadm_vnode_check_exec(struct ucred *ucred, struct vnode *vp,
 			case aslr_disabled:
 				flags |= PAX_NOTE_NOASLR;
 				break;
+#if __HardenedBSD_version > 21
+			case shlibrandom_enabled:
+				flags |= PAX_NOTE_SHLIBRANDOM;
+				break;
+			case shlibrandom_disabled:
+				flags |= PAX_NOTE_NOSHLIBRANDOM;
+				break;
+#endif
 			default:
 				break;
 			}

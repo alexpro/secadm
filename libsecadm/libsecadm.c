@@ -187,6 +187,12 @@ secadm_debug_print_rule(secadm_rule_t *rule)
 		case aslr_enabled:
 			printf("    - Feature[ASLR]: Enabled\n");
 			break;
+		case shlibrandom_disabled:
+			printf("    - Feature[SHLIBRANDOM]: Disabled\n");
+			break;
+		case shlibrandom_enabled:
+			printf("    - Feature[SHLIBRANDOM]: Enabled\n");
+			break;
 		default:
 			printf("    - Feature %d unknown\n",
 			    rule->sr_features[i].sf_type);
