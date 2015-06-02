@@ -182,6 +182,7 @@ sysctl_control(SYSCTL_HANDLER_ARGS)
 		// XXXOP LOCKING
 		if (securelevel_gt(req->td->td_ucred, 0))
 			return (EPERM);
+		break;
 	default:
 		printf("[SECADM] unknown cmd: %x\n", cmd.sc_type);
 		break;
