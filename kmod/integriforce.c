@@ -26,7 +26,6 @@
 
 #include <sys/param.h>
 
-#if __FreeBSD_version > 1100000
 
 #include <sys/acl.h>
 #include <sys/kernel.h>
@@ -53,7 +52,9 @@
 
 #include <crypto/sha1.h>
 #include <crypto/sha2/sha2.h>
+#if __FreeBSD_version > 1100000
 #include <crypto/sha2/sha256.h>
+#endif
 #include <security/mac/mac_policy.h>
 
 #include "secadm.h"
@@ -93,12 +94,14 @@ do_integriforce_check(secadm_rule_t *rule, struct vattr *vap,
 	case si_success:
 		return (0);
 	default:
+		KASSERT(rule != NULL && rule->sr_path != NULL,
+		    ("%s: failed ...", __func__));
 		switch (integriforce_p->si_mode) {
 		case si_mode_soft:
-			printf("secadm warning: hash did not match for rule %zu\n", rule->sr_id);
+			printf("[SECADM] Warning: hash did not match for file %s\n", rule->sr_path);
 			return (0);
 		default:
-			printf("secadm error: hash did not match for rule %zu. Blocking execution.\n", rule->sr_id);
+			printf("[SECADM] Error: hash did not match for file %s. Blocking execution.\n", rule->sr_path);
 			return (EPERM);
 		}
 	}
@@ -173,13 +176,15 @@ do_integriforce_check(secadm_rule_t *rule, struct vattr *vap,
 	}
 
 	if (memcmp(integriforce_p->si_hash, hash, hashsz)) {
+		KASSERT(rule != NULL && rule->sr_path != NULL,
+		    ("%s: failed ...", __func__));
 		switch (integriforce_p->si_mode) {
 		case si_mode_soft:
-			printf("secadm warning: hash did not match for rule %zu\n", rule->sr_id);
+			printf("[SECADM] Warning: hash did not match for file %s\n", rule->sr_path);
 			err = 0;
 			break;
 		default:
-			printf("secadm error: hash did not match for rule %zu. Blocking execution.\n", rule->sr_id);
+			printf("[SECADM] Error: hash did not match for file %s. Blocking execution.\n", rule->sr_path);
 			err = EPERM;
 			break;
 		}
@@ -270,5 +275,3 @@ sysctl_integriforce_so(SYSCTL_HANDLER_ARGS)
 
 	return (0);
 }
-
-#endif // __FreeBSD_version

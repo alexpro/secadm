@@ -172,11 +172,20 @@ sysctl_control(SYSCTL_HANDLER_ARGS)
 	case secadm_set_rules:
 		/* XXX Should we cache the ucred for local use in the
 		 * sysctl lifecycle? */
-		if (req->td->td_ucred->cr_uid != 0)
+		// XXXOP LOCKING
+		if (req->td->td_ucred->cr_uid != 0) {
+			printf("[SECADM] Disallowed command: 0x%x by uid: %d\n",
+			    cmd.sc_type, req->td->td_ucred->cr_uid);
 			return (EPERM);
+		}
 
-		if (securelevel_gt(req->td->td_ucred, 0))
+		// XXXOP LOCKING
+		if (securelevel_gt(req->td->td_ucred, 0)) {
+			printf("[SECADM] Disallowed command: 0x%x by uid: %d\n",
+			    cmd.sc_type, req->td->td_ucred->cr_uid);
 			return (EPERM);
+		}
+		break;
 	default:
 		break;
 	}
@@ -224,6 +233,9 @@ sysctl_control(SYSCTL_HANDLER_ARGS)
 	case secadm_set_views:
 		return (ENOTSUP);
 	default:
+		// XXXOP LOCKING
+		printf("[SECADM] Unknown command: 0x%x by uid: %d\n",
+		    cmd.sc_type, req->td->td_ucred->cr_uid);
 		return (EINVAL);
 	}
 

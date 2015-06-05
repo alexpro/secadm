@@ -140,6 +140,8 @@ validate_ruleset(struct thread *td, secadm_rule_t *head)
 				case si_mode_hard:
 					break;
 				default:
+					printf("[SECADM] Invalid integriforce mode: 0x%x\n",
+					    integriforce_p->si_mode);
 					return (1);
 				}
 
@@ -148,6 +150,8 @@ validate_ruleset(struct thread *td, secadm_rule_t *head)
 				case si_hash_sha1:
 					break;
 				default:
+					printf("[SECADM] Invalid integriforce hash type: 0x%x\n",
+					    integriforce_p->si_hashtype);
 					return (1);
 				}
 
@@ -275,6 +279,9 @@ flush_rules(struct thread *td)
 	struct secadm_prison_entry *entry;
 	secadm_rule_t *rule, *next;
 
+	printf("[SECADM] Flushed rules by %u uid\n",
+	    td->td_ucred->cr_uid);
+
 	entry = get_prison_list_entry(td->td_ucred->cr_prison->pr_name, 0);
 	if (entry == NULL)
 		return;
@@ -300,7 +307,7 @@ read_rule_from_userland(struct thread *td, secadm_rule_t *rule)
 	secadm_integriforce_t *integriforce_p;
 	size_t i;
 	int err = 0;
-	char *path;
+	char *path=NULL;
 	unsigned char *hash;
 
 	rule->sr_mount[MNAMELEN-1] = '\0';
@@ -308,8 +315,18 @@ read_rule_from_userland(struct thread *td, secadm_rule_t *rule)
 	if (pre_validate_rule(td, rule))
 		goto error;
 
+	path = malloc(rule->sr_pathlen+1, M_SECADM, M_WAITOK | M_ZERO);
+	err = copyin(rule->sr_path, path, rule->sr_pathlen);
+	if (err) {
+		free(path, M_SECADM);
+		goto error;
+	}
+
+	path[rule->sr_pathlen] = '\0';
+	rule->sr_path = path;
+
 	features = malloc(sizeof(secadm_feature_t) *
-	    rule->sr_nfeatures, M_SECADM, M_WAITOK);
+	    rule->sr_nfeatures, M_SECADM, M_WAITOK | M_ZERO);
 
 	err = copyin(rule->sr_features, features,
 	    sizeof(secadm_feature_t) * rule->sr_nfeatures);
@@ -328,7 +345,7 @@ read_rule_from_userland(struct thread *td, secadm_rule_t *rule)
 
 			integriforce_p = malloc(
 			    sizeof(secadm_integriforce_t), M_SECADM,
-			    M_WAITOK);
+			    M_WAITOK | M_ZERO);
 
 			err = copyin(features[i].sf_metadata,
 			    integriforce_p,
@@ -381,22 +398,7 @@ read_rule_from_userland(struct thread *td, secadm_rule_t *rule)
 
 	rule->sr_features = features;
 
-	if (rule->sr_path && rule->sr_pathlen) {
-		path = malloc(rule->sr_pathlen+1, M_SECADM, M_WAITOK | M_ZERO);
-		err = copyin(rule->sr_path, path, rule->sr_pathlen);
-		if (err) {
-			free(path, M_SECADM);
-			goto error;
-		}
-
-		path[rule->sr_pathlen] = '\0';
-		rule->sr_path = path;
-	} else {
-		rule->sr_path = NULL;
-		rule->sr_pathlen = 0;
-	}
-
-	kernel_metadata = malloc(sizeof(secadm_kernel_metadata_t), M_SECADM, M_WAITOK);
+	kernel_metadata = malloc(sizeof(secadm_kernel_metadata_t), M_SECADM, M_WAITOK | M_ZERO);
 	kernel_metadata->skm_owner = td->td_ucred->cr_prison;
 	rule->sr_kernel = kernel_metadata;
 	rule->sr_prison = malloc(strlen(kernel_metadata->skm_owner->pr_name)+1,
@@ -406,6 +408,9 @@ read_rule_from_userland(struct thread *td, secadm_rule_t *rule)
 	return (0);
 
 error:
+	if (path)
+		free(path, M_SECADM);
+
 	rule->sr_path = NULL;
 	rule->sr_pathlen = 0;
 	rule->sr_features = NULL;
@@ -581,7 +586,7 @@ handle_get_rule(struct thread *td, secadm_command_t *cmd, secadm_reply_t *reply)
 	}
 
 	written=0;
-	buf = malloc(size, M_SECADM, M_WAITOK);
+	buf = malloc(size, M_SECADM, M_WAITOK | M_ZERO);
 
 	memcpy(buf, rule, sizeof(secadm_rule_t));
 	newrule = (secadm_rule_t *)buf;
