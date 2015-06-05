@@ -31,8 +31,8 @@
 
 #include <sys/param.h>
 
-#define SECADM_VERSION			2015051101UL
-#define SECADM_PRETTY_VERSION		"0.2.1"
+#define SECADM_VERSION			2015060401UL
+#define SECADM_PRETTY_VERSION		"0.2.3"
 
 #define SECADM_KLDNAME			"secadm"
 
@@ -63,8 +63,9 @@ typedef enum secadm_feature_type {
 	segvguard_enabled,
 	aslr_disabled,
 	aslr_enabled,
+	integriforce,
 	shlibrandom_disabled,
-	shlibrandom_enabled,
+	shlibrandom_enabled
 } secadm_feature_type_t;
 
 typedef enum secadm_hash_type {
