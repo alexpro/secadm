@@ -1,34 +1,16 @@
 {
 	"applications": [
 		{
-			"path": "/usr/local/lib/firefox/firefox-bin",
-			"features": {
-				"pageexec" : false,
-				"mprotect": false,
-				"aslr": false,
-			}
-		}
-		{
 			"path": "/usr/local/lib/firefox/firefox",
 			"features": {
 				"pageexec" : false,
 				"mprotect": false,
-				"aslr": false,
 			}
 		}
 		{
-			"path": "/usr/local/bin/firefox",
+			"path": "/usr/local/sbin/privoxy",
 			"features": {
-				"pageexec" : false,
-				"mprotect": false,
-				"aslr": false,
-			}
-		}
-		{
-			"path": "/usr/local/openjdk7/bin/java",
-			"features": {
-				"pageexec": false,
-				"mprotect": false,
+				"shlibrandom": false,
 			}
 		}
 	]
