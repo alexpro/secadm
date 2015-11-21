@@ -51,7 +51,7 @@ static void handle_version_command(secadm_command_t *cmd, secadm_reply_t *reply)
 static int sysctl_control(SYSCTL_HANDLER_ARGS);
 
 SYSCTL_NODE(_hardening, OID_AUTO, secadm, CTLFLAG_RD, 0,
-    "HardenedBSD Security Firewall");
+    "HardenedBSD Security Module");
 
 SYSCTL_NODE(_hardening_secadm, OID_AUTO, control,
     CTLFLAG_MPSAFE | CTLFLAG_RW | CTLFLAG_PRISON | CTLFLAG_ANYBODY, sysctl_control,
@@ -156,6 +156,9 @@ sysctl_control(SYSCTL_HANDLER_ARGS)
 	secadm_reply_t reply;
 	int err;
 
+	memset(&cmd, 0x00, sizeof(secadm_command_t));
+	memset(&reply, 0x00, sizeof(secadm_reply_t));
+
 	if (!(req->newptr) || (req->newlen != sizeof(secadm_command_t)))
 		return (EINVAL);
 
@@ -187,9 +190,6 @@ sysctl_control(SYSCTL_HANDLER_ARGS)
 		}
 		break;
 	default:
-		// XXXOP LOCKING
-		printf("[SECADM] unknown command: 0x%x by uid: %d\n",
-		    cmd.sc_type, req->td->td_ucred->cr_uid);
 		break;
 	}
 
