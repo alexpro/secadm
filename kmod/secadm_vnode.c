@@ -141,18 +141,21 @@ secadm_vnode_check_exec(struct ucred *ucred, struct vnode *vp,
 	SPL_RUNLOCK(entry, tracker);
 
 #if __HardenedBSD_version > 35
+
+#define secadm_order_first 1
 	/*
-	 * XXXOP:  move the check for PAX_NOTE_FINALIZED closer to the
+	 * XXXOP:  move the check for PAX_NOTE_HAS_SPEC_RULE closer to the
 	 * functions entry point to avoid the lookup for ACLs when
 	 * FS-EA has the higher priority
 	 */
 	if (err == 0 && flags &&
-	    (imgp->proc->p_pax & PAX_NOTE_FINALIZED) != PAX_NOTE_FINALIZED) {
+	    (imgp->proc->p_pax & PAX_NOTE_HAS_SPEC_RULE) != PAX_NOTE_HAS_SPEC_RULE) {
 		if (secadm_order_first)
-			err = pax_elf(imgp, curthread, flags | PAX_NOTE_FINALIZED);
+			err = pax_elf(imgp, curthread, flags | PAX_NOTE_HAS_SPEC_RULE);
 		else
 			err = pax_elf(imgp, curthread, flags);
 	}
+#else
 	if (err == 0 && flags)
 		err = pax_elf(imgp, flags);
 #endif
