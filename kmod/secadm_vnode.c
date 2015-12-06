@@ -62,6 +62,9 @@ secadm_vnode_check_exec(struct ucred *ucred, struct vnode *vp,
 	struct vattr vap;
 	size_t i;
 	int err=0, flags=0;
+#if __HardenedBSD_version > 35
+	int old_flags = 0;
+#endif
 
 	entry = get_prison_list_entry(ucred->cr_prison->pr_name, 0);
 	if (entry == NULL)
@@ -148,8 +151,9 @@ secadm_vnode_check_exec(struct ucred *ucred, struct vnode *vp,
 	 * functions entry point to avoid the lookup for ACLs when
 	 * FS-EA has the higher priority
 	 */
+	pax_get_flags_td(curthread, &old_flags);
 	if (err == 0 && flags &&
-	    (imgp->proc->p_pax & PAX_NOTE_HAS_SPEC_RULE) != PAX_NOTE_HAS_SPEC_RULE) {
+	    (old_flags & PAX_NOTE_HAS_SPEC_RULE) != PAX_NOTE_HAS_SPEC_RULE) {
 		if (secadm_order_first)
 			err = pax_elf(imgp, curthread, flags | PAX_NOTE_HAS_SPEC_RULE);
 		else
