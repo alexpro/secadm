@@ -152,13 +152,8 @@ secadm_vnode_check_exec(struct ucred *ucred, struct vnode *vp,
 	 * FS-EA has the higher priority
 	 */
 	pax_get_flags_td(curthread, &old_flags);
-	if (err == 0 && flags &&
-	    (old_flags & PAX_NOTE_HAS_SPEC_RULE) != PAX_NOTE_HAS_SPEC_RULE) {
-		if (secadm_order_first)
-			err = pax_elf(imgp, curthread, flags | PAX_NOTE_HAS_SPEC_RULE);
-		else
-			err = pax_elf(imgp, curthread, flags);
-	}
+	if (err == 0 && flags)
+		err = pax_elf(imgp, curthread, flags);
 #else
 	if (err == 0 && flags)
 		err = pax_elf(imgp, flags);
