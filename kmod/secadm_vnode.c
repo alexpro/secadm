@@ -62,7 +62,7 @@ secadm_vnode_check_exec(struct ucred *ucred, struct vnode *vp,
 	struct vattr vap;
 	size_t i;
 	int err=0, flags=0;
-#if __HardenedBSD_version > 35
+#if __HardenedBSD_version == 36 || __HardenedBSD_version > 38
 	int old_flags = 0;
 #endif
 
@@ -143,9 +143,7 @@ secadm_vnode_check_exec(struct ucred *ucred, struct vnode *vp,
 
 	SPL_RUNLOCK(entry, tracker);
 
-#if __HardenedBSD_version > 35
-
-#define secadm_order_first 1
+#if __HardenedBSD_version == 36 || __HardenedBSD_version > 38
 	/*
 	 * XXXOP:  move the check for PAX_NOTE_HAS_SPEC_RULE closer to the
 	 * functions entry point to avoid the lookup for ACLs when
