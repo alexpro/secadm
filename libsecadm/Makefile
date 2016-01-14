@@ -20,8 +20,8 @@ NO_MAN=	"yes"
 .include <bsd.lib.mk>
 
 deinstall:
-	rm -f /usr/local/lib/libsecadm
-	rm -f /usr/local/lib/libsecadm.0
+	rm -f /usr/local/lib/libsecadm.so
+	rm -f /usr/local/lib/libsecadm.so.0
 	rm -f /usr/local/include/libsecadm.h
 	rm -f /usr/local/include/secadm.h
 
