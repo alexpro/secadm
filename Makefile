@@ -1,3 +1,5 @@
+MK_DEBUG_FILES=	no
+
 SUBDIR+=	etc \
 		kmod \
 		libsecadm \
