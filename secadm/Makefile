@@ -2,6 +2,8 @@ PROG=	secadm
 SRCS=	config.c \
 	secadm.c
 
+MK_DEBUG_FILES=	no
+
 .if defined(PREFIX)
 BINDIR?=	${PREFIX}/sbin
 .else

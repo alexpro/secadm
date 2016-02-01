@@ -3,6 +3,8 @@ SHLIB_MAJOR=	0
 SRCS=	libsecadm.c rules.c
 INCS=	secadm.h libsecadm.h
 
+MK_DEBUG_FILES=	no
+
 .if defined(PREFIX)
 INCLUDEDIR?=	${PREFIX}/include
 .else
