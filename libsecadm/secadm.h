@@ -31,11 +31,20 @@
 
 #include <sys/param.h>
 
-#define SECADM_VERSION			2015090501UL
-#define SECADM_PRETTY_VERSION		"0.2.4-opbsd"
+#define SECADM_VERSION			2015021201UL
+#define SECADM_PRETTY_VERSION		"0.2.5-opbsd"
 
 #define SECADM_KLDNAME			"secadm"
 
+#if __HardenedBSD_version > 40
+#define	FEATURE_PAX_PAGEEXEC		"hbsd_noexec"
+#define	FEATURE_PAX_MPROTECT		"hbsd_noexec"
+#define	FEATURE_PAX_SEGVGUARD		"hbsd_segvguard"
+#define	FEATURE_PAX_ASLR		"hbsd_aslr"
+#define	FEATURE_PAX_SHLIBRANDOM		"hbsd_aslr"
+#define	FEATURE_PAX_DISALLOWMAP32BIT	"hbsd_aslr"
+#define FEATURE_PAX_HARDENING		"hbsd_hardening"
+#else
 #define	FEATURE_PAX_PAGEEXEC		"pax_pageexec"
 #define	FEATURE_PAX_MPROTECT		"pax_mprotect"
 #define	FEATURE_PAX_SEGVGUARD		"segvguard"
@@ -43,6 +52,7 @@
 #define	FEATURE_PAX_SHLIBRANDOM		"aslr"
 #define	FEATURE_PAX_DISALLOWMAP32BIT	"aslr"
 #define FEATURE_PAX_HARDENING		"pax_hardening"
+#endif
 
 /* These flags are unused right now */
 #define SECADM_RULE_FLAGS_NONE		0x00000000
