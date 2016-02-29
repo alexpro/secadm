@@ -34,7 +34,7 @@
 #include <sys/module.h>
 #include <sys/mount.h>
 #include <sys/proc.h>
-#include <sys/rmlock.h>
+#include <sys/sx.h>
 #include <sys/sysctl.h>
 #include <sys/systm.h>
 #include <sys/tree.h>
@@ -46,7 +46,6 @@
 int
 secadm_sysctl_handler(SYSCTL_HANDLER_ARGS)
 {
-	struct rm_priotracker tracker;
 	secadm_prison_entry_t *entry;
 	secadm_command_t cmd;
 	secadm_reply_t reply;
@@ -71,6 +70,7 @@ secadm_sysctl_handler(SYSCTL_HANDLER_ARGS)
 
 	reply.sr_version = SECADM_VERSION;
 
+	/* Check permissions */
 	switch (cmd.sc_type) {
 	case secadm_cmd_flush_ruleset:
 	case secadm_cmd_load_ruleset:
@@ -78,6 +78,7 @@ secadm_sysctl_handler(SYSCTL_HANDLER_ARGS)
 	case secadm_cmd_del_rule:
 	case secadm_cmd_enable_rule:
 	case secadm_cmd_disable_rule:
+	case secadm_cmd_set_whitelist_mode:
 		if (req->td->td_ucred->cr_uid) {
 			printf("[SECADM] Denied attempt to sysctl by "
 			    "(%s) uid:%d jail:%d\n",
@@ -94,6 +95,7 @@ secadm_sysctl_handler(SYSCTL_HANDLER_ARGS)
 		break;
 	}
 
+	/* Perform command */
 	switch (cmd.sc_type) {
 	case secadm_cmd_flush_ruleset:
 		if (securelevel_gt(req->td->td_ucred, 1)) {
@@ -323,14 +325,50 @@ secadm_sysctl_handler(SYSCTL_HANDLER_ARGS)
 		entry = get_prison_list_entry(
 		    req->td->td_ucred->cr_prison->pr_id);
 
-		RM_PE_RLOCK(entry, tracker);
+		PE_RLOCK(entry);
 		if ((err = copyout(&(entry->sp_num_rules), reply.sr_data,
 		    sizeof(size_t)))) {
 			reply.sr_code = secadm_reply_fail;
 		} else {
 			reply.sr_code = secadm_reply_success;
 		}
-		RM_PE_RUNLOCK(entry, tracker);
+		PE_RUNLOCK(entry);
+
+		break;
+
+	case secadm_cmd_set_whitelist_mode:
+		entry = get_prison_list_entry(
+		    req->td->td_ucred->cr_prison->pr_id);
+
+		PE_RLOCK(entry);
+		/* Reusing i to get the flag */
+		err = copyin(cmd.sc_data, &i, sizeof(int));
+		if (err == 0) {
+			if (i) {
+				entry->sp_integriforce_flags |=
+				    SECADM_INTEGRIFORCE_FLAGS_WHITELIST;
+			} else {
+				entry->sp_integriforce_flags &=
+				    ~(SECADM_INTEGRIFORCE_FLAGS_WHITELIST);
+			}
+
+			reply.sr_code = secadm_reply_success;
+		} else {
+			reply.sr_code = secadm_reply_fail;
+		}
+		PE_RUNLOCK(entry);
+
+		break;
+
+	case secadm_cmd_get_whitelist_mode:
+		entry = get_prison_list_entry(
+		    req->td->td_ucred->cr_prison->pr_id);
+
+		PE_RLOCK(entry);
+		copyout(&(entry->sp_integriforce_flags), reply.sr_data, sizeof(int));
+		PE_RUNLOCK(entry);
+
+		reply.sr_code = secadm_reply_success;
 
 		break;
 

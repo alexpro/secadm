@@ -55,6 +55,8 @@ int delete_action(int, char **);
 int enable_action(int, char **);
 int disable_action(int, char **);
 int version_action(int, char **);
+int get_action(int, char **);
+int set_action(int, char **);
 
 void free_ruleset(secadm_rule_t *);
 
@@ -133,6 +135,18 @@ struct secadm_commands {
 		"<id>",
 		"disable rule",
 		disable_action
+	},
+	{
+		"set",
+		"<options>",
+		"Set various secadm options",
+		set_action
+	},
+	{
+		"get",
+		"<options>",
+		"Get various secadm options",
+		get_action
 	}
 };
 
@@ -370,6 +384,8 @@ load_action(int argc, char **argv)
 		return (1);
 	}
 
+	ruleset = NULL;
+
 	parser = ucl_parser_new(UCL_PARSER_KEY_LOWERCASE);
 	if (parser == NULL) {
 		fprintf(stderr, "Could not create new parser.\n");
@@ -465,6 +481,18 @@ load_action(int argc, char **argv)
 
 			n++;
 		}
+
+		if (validate == 0) {
+			cur = ucl_lookup_path(top, "secadm.whitelist_mode");
+			if (cur) {
+				if (secadm_set_whitelist_mode(ucl_object_toboolean(cur))) {
+					fprintf(stderr, "[-] Could not set whitelist mode\n");
+					ucl_parser_free(parser);
+
+					return (1);
+				}
+			}
+		}
 	}
 
 	if (n == 0) {
@@ -478,6 +506,57 @@ load_action(int argc, char **argv)
 
 	if (validate == 0)
 		secadm_load_ruleset(ruleset);
+
+	return (0);
+}
+
+int
+set_action(int argc, char **argv)
+{
+	int ch;
+
+	optind = 2;
+	while ((ch = getopt(argc, argv, "Ww")) != -1) {
+		switch (ch) {
+		case 'w':
+			printf("Unsetting whitelist\n");
+			if (secadm_set_whitelist_mode(0)) {
+				fprintf(stderr, "[-] Could not unset whitelist mode\n");
+				return (1);
+			}
+
+			break;
+
+		case 'W':
+			printf("Setting whitelist\n");
+			if (secadm_set_whitelist_mode(1)) {
+				fprintf(stderr, "[-] Could not set whitelist mode\n");
+				return (1);
+			}
+
+			break;
+
+		default:
+			usage(argc, argv);
+			return (1);
+		}
+	}
+
+	return (0);
+}
+
+int
+get_action(int argc, char **argv)
+{
+	int flags;
+
+	flags = secadm_get_whitelist_mode();
+	if ((flags & SECADM_INTEGRIFORCE_FLAGS_WHITELIST) ==
+	    SECADM_INTEGRIFORCE_FLAGS_WHITELIST) {
+		printf("Whitelist:\ton\n");
+	} else {
+		printf("Whitelist:\toff\n");
+	}
 
 	return (0);
 }
@@ -1024,10 +1103,16 @@ parse_pax_object(const ucl_object_t *obj, secadm_rule_t *rule)
 
 	while ((cur = ucl_iterate_object(obj, &it, true))) {
 		key = ucl_object_key(cur);
+		if (!(key)) {
+			return (1);
+		}
 
 		if (!strncmp(key, "path", 4)) {
 			rule->sr_pax_data->sp_path =
 			    (u_char *)ucl_object_tostring(cur);
+			if (!(rule->sr_pax_data->sp_path)) {
+				return (1);
+			}
 		} else if (!strncmp(key, "aslr", 4)) {
 			rule->sr_pax_data->sp_pax_set |=
 			    SECADM_PAX_ASLR_SET;
@@ -1103,16 +1188,31 @@ int parse_integriforce_object(const ucl_object_t *obj, secadm_rule_t *rule)
 
 	while ((cur = ucl_iterate_object(obj, &it, true))) {
 		key = ucl_object_key(cur);
+		if (!(key)) {
+			return (1);
+		}
 
 		if (!strncmp(key, "path", 4)) {
 			rule->sr_integriforce_data->si_path =
 			    (u_char *)ucl_object_tostring(cur);
+			if (!(rule->sr_integriforce_data->si_path)) {
+				return (1);
+			}
 		} else if (!strncmp(key, "hash", 4)) {
 			hash = ucl_object_tostring(cur);
+			if (!(hash)) {
+				return (1);
+			}
 		} else if (!strncmp(key, "type", 4)) {
 			type = ucl_object_tostring(cur);
+			if (!(type)) {
+				return (1);
+			}
 		} else if (!strncmp(key, "mode", 4)) {
 			mode = ucl_object_tostring(cur);
+			if (!(mode)) {
+				return (1);
+			}
 		} else {
 			fprintf(stderr,
 			    "Unknown attribute '%s' of Integriforce rule.\n", key);
