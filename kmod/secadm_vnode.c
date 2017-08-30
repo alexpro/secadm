@@ -183,6 +183,18 @@ secadm_vnode_check_exec(struct ucred *ucred, struct vnode *vp,
 					    PAX_NOTE_NODISALLOWMAP32BIT;
 				}
 			}
+
+#ifdef PAX_NOTE_PREFER_ACL
+			if (rule->sr_pax_data->sp_pax_set &
+			    SECADM_PAX_PREFER_ACL) {
+				if (rule->sr_pax_data->sp_pax &
+				    SECADM_PAX_PREFER_ACL) {
+					flags |= PAX_NOTE_PREFER_ACL;
+				} else {
+					flags &= ~PAX_NOTE_PREFER_ACL;
+				}
+			}
+#endif
 		}
 	}
 rule_inactive:
