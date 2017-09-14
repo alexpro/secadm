@@ -1,7 +1,6 @@
 SHLIB=	secadm
 SHLIB_MAJOR=	1
 SRCS=	libsecadm.c
-INCS=	secadm.h
 
 .if defined(PREFIX)
 INCLUDEDIR?=	${PREFIX}/include
