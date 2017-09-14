@@ -39,7 +39,7 @@ stop_cmd="secadm_stop"
 
 load_rc_config $name
 : ${secadm_enable:="NO"}
-: ${secadm_rules:="/usr/local/etc/secadm.rules"}
+: ${secadm_rules:="/etc/secadm.rules"}
 
 command="/usr/sbin/secadm"
 command_args="load ${secadm_rules}"
@@ -70,7 +70,7 @@ secadm_stop()
 
 if [ ! -x ${command} ]
 then
-    command="/usr/local/sbin/secadm"
+    command="/sbin/secadm"
 fi
 
 run_rc_command "$1"
