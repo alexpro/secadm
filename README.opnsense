@@ -1,0 +1,15 @@
+(checkout opnsense src to 17.7.1 tag)
+
+Integrate secadm in kernel tree and base system:
+
+Change SRCDIR variable as needed in integrate.sh
+
+Run integrate.sh
+
+***
+
+Встраивание secadm в ядро и базовую систему:
+
+Изменить при необходимости переменную SRCDIR в integrate.sh
+
+Запустить integrate.sh
