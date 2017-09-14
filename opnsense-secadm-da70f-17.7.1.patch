@@ -1,0 +1,136 @@
+diff --git a/include/Makefile b/include/Makefile
+index e4cdf72dd..30e402333 100644
+--- a/include/Makefile
++++ b/include/Makefile
+@@ -29,6 +29,8 @@ INCS=	a.out.h ar.h assert.h bitstring.h complex.h cpio.h _ctype.h ctype.h \
+ 	uchar.h ulimit.h unistd.h utime.h utmpx.h uuid.h varargs.h \
+ 	wchar.h wctype.h wordexp.h xlocale.h
+ 
++INCS+=	secadm.h
++
+ .PATH: ${.CURDIR}/../contrib/libc-vis
+ INCS+=	vis.h
+ 
+diff --git a/lib/Makefile b/lib/Makefile
+index 0fff80266..2bb260810 100644
+--- a/lib/Makefile
++++ b/lib/Makefile
+@@ -92,6 +92,7 @@ SUBDIR=	${SUBDIR_ORDERED} \
+ 	${_librtld_db} \
+ 	libsbuf \
+ 	${_libsdp} \
++	libsecadm \
+ 	${_libsm} \
+ 	libsmb \
+ 	${_libsmdb} \
+diff --git a/share/mk/src.libnames.mk b/share/mk/src.libnames.mk
+index 30fab90c6..43572b866 100644
+--- a/share/mk/src.libnames.mk
++++ b/share/mk/src.libnames.mk
+@@ -149,6 +149,7 @@ _LIBRARIES=	\
+ 		rtld_db \
+ 		sbuf \
+ 		sdp \
++		secadm \
+ 		sm \
+ 		smb \
+ 		ssl \
+diff --git a/sys/conf/files b/sys/conf/files
+index c20593770..58dbdd590 100644
+--- a/sys/conf/files
++++ b/sys/conf/files
+@@ -4281,6 +4281,7 @@ security/mac/mac_cred.c		optional mac
+ security/mac/mac_framework.c	optional mac
+ security/mac/mac_inet.c		optional mac inet | mac inet6
+ security/mac/mac_inet6.c	optional mac inet6
++security/mac/mac_jail.c		optional mac
+ security/mac/mac_label.c	optional mac
+ security/mac/mac_net.c		optional mac
+ security/mac/mac_pipe.c		optional mac
+diff --git a/sys/modules/Makefile b/sys/modules/Makefile
+index 87cd84d31..15a189f62 100644
+--- a/sys/modules/Makefile
++++ b/sys/modules/Makefile
+@@ -325,6 +325,7 @@ SUBDIR=	\
+ 	${_scsi_low} \
+ 	sdhci \
+ 	sdhci_pci \
++	secadm \
+ 	sem \
+ 	send \
+ 	${_sf} \
+diff --git a/sys/security/mac/mac_framework.h b/sys/security/mac/mac_framework.h
+index 7068d4776..8dea937d4 100644
+--- a/sys/security/mac/mac_framework.h
++++ b/sys/security/mac/mac_framework.h
+@@ -73,6 +73,7 @@ struct mbuf;
+ struct mount;
+ struct msg;
+ struct msqid_kernel;
++struct prison;
+ struct proc;
+ struct semid_kernel;
+ struct shmfd;
+@@ -444,6 +445,8 @@ int	mac_vnode_execve_will_transition(struct ucred *cred,
+ void	mac_vnode_relabel(struct ucred *cred, struct vnode *vp,
+ 	    struct label *newlabel);
+ 
++void	mac_prison_destroy(struct prison *pr);
++
+ /*
+  * Calls to help various file systems implement labeling functionality using
+  * their existing EA implementation.
+diff --git a/sys/security/mac/mac_policy.h b/sys/security/mac/mac_policy.h
+index b875e6eb5..8292935eb 100644
+--- a/sys/security/mac/mac_policy.h
++++ b/sys/security/mac/mac_policy.h
+@@ -86,6 +86,7 @@ struct mount;
+ struct msg;
+ struct msqid_kernel;
+ struct pipepair;
++struct prison;
+ struct proc;
+ struct sbuf;
+ struct semid_kernel;
+@@ -670,6 +671,8 @@ typedef int	(*mpo_vnode_setlabel_extattr_t)(struct ucred *cred,
+ 		    struct vnode *vp, struct label *vplabel,
+ 		    struct label *intlabel);
+ 
++typedef void	(*mpo_prison_destroy_t)(struct prison *prison);
++
+ struct mac_policy_ops {
+ 	/*
+ 	 * Policy module operations.
+@@ -962,6 +965,7 @@ struct mac_policy_ops {
+ 	mpo_vnode_internalize_label_t		mpo_vnode_internalize_label;
+ 	mpo_vnode_relabel_t			mpo_vnode_relabel;
+ 	mpo_vnode_setlabel_extattr_t		mpo_vnode_setlabel_extattr;
++	mpo_prison_destroy_t			mpo_prison_destroy;
+ };
+ 
+ /*
+diff --git a/sys/sys/pax.h b/sys/sys/pax.h
+index 3dee76fc2..4c674bc40 100644
+--- a/sys/sys/pax.h
++++ b/sys/sys/pax.h
+@@ -32,6 +32,8 @@
+ #ifndef	_SYS_PAX_H
+ #define	_SYS_PAX_H
+ 
++#define	__HardenedBSD_version	1000048UL
++
+ #if defined(_KERNEL) || defined(_WANT_PRISON)
+ struct hbsd_features {
+ 	struct hbsd_aslr {
+diff --git a/usr.sbin/Makefile b/usr.sbin/Makefile
+index c2b0b7c15..46099a9b4 100644
+--- a/usr.sbin/Makefile
++++ b/usr.sbin/Makefile
+@@ -73,6 +73,7 @@ SUBDIR=	adduser \
+ 	rpc.statd \
+ 	rpc.umntall \
+ 	rtprio \
++	secadm \
+ 	service \
+ 	services_mkdb \
+ 	sesutil \
