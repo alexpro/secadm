@@ -7,6 +7,6 @@ SRCS=	secadm.c \
 	tpe.c \
 	vnode_if.h
 
-CFLAGS+=	-g -O0 -I${.CURDIR}/../libsecadm
+CFLAGS+=	-g -O0 -I${.CURDIR}/../../../include
 
 .include <bsd.kmod.mk>
