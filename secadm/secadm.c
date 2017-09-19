@@ -568,7 +568,7 @@ load_action(int argc, char **argv)
 		fprintf(stderr, "No rules.\n");
 		ucl_parser_free(parser);
 
-		return (1);
+		return (0);
 	}
 
 	ucl_parser_free(parser);
