@@ -1,0 +1,3 @@
+secadm {
+.include(glob=true,try=true) "/usr/local/etc/secadm.conf.d/*"
+}
